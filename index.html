@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Где что лежит: «Перекрёсток», Миклухо-Маклая, 37</title>
+<style>
+:root{--bg:#f6f5f1;--fg:#1d2327;--mut:#5d676d;--card:#fff;--bd:#d6d9d6;--acc:#1b6b4f;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#171c1f;--fg:#eef1ef;--mut:#a3adb2;--card:#222a2e;--bd:#3b464b;--acc:#5dcaa5}}
+:root[data-theme="dark"]{--bg:#171c1f;--fg:#eef1ef;--mut:#a3adb2;--card:#222a2e;--bd:#3b464b;--acc:#5dcaa5}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.5 "Trebuchet MS","Segoe UI",system-ui,sans-serif}
+main{max-width:760px;margin:0 auto;padding:20px 16px 40px}
+h1{font:700 26px/1.2 Georgia,"Times New Roman",serif;margin:0 0 4px}
+.sub{color:var(--mut);margin:0 0 16px;font-size:14px}
+.search{width:100%;padding:14px 16px;font:inherit;font-size:17px;border:2px solid var(--bd);border-radius:12px;background:var(--card);color:var(--fg)}
+.search:focus{outline:none;border-color:var(--acc)}
+.res{min-height:24px;margin:8px 0 12px;font-size:14px;color:var(--mut)}
+.mapbox{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:6px}
+svg{display:block;width:100%;height:auto}
+.z{cursor:pointer;transition:opacity .2s}
+.z .c{fill:var(--c);fill-opacity:.3;stroke:var(--c);stroke-width:1}
+.z .s{fill:url(#sh);pointer-events:none}
+.z.hit .c{fill-opacity:.6;stroke-width:3}
+.z.sel .c{stroke:var(--fg);stroke-width:3}
+.dim{opacity:.18}
+.bd{fill:var(--card);stroke:var(--bd);stroke-width:.8;pointer-events:none}
+.bt{fill:var(--fg);font:600 12px "Trebuchet MS",sans-serif;pointer-events:none}
+.nm{fill:var(--fg);font:500 12px "Trebuchet MS",sans-serif;pointer-events:none}
+.tx{fill:var(--mut);font:12px "Trebuchet MS",sans-serif}
+.info{margin-top:12px;padding:14px 16px;border:1px solid var(--bd);border-radius:12px;background:var(--card);min-height:76px}
+.info b{font-size:18px}
+.info p{margin:4px 0 0;color:var(--mut);font-size:14px}
+h2{font-size:15px;margin:22px 0 8px}
+.grp{margin-bottom:14px}
+.gh{display:flex;align-items:center;gap:8px;font-size:14px;color:var(--mut);margin-bottom:6px}
+.gh i{width:14px;height:14px;border-radius:3px;background:var(--c);opacity:.6;display:inline-block}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{font:inherit;font-size:14px;padding:6px 10px;border:1px solid var(--bd);border-radius:999px;background:var(--card);color:var(--fg);cursor:pointer}
+.chip:hover,.chip:focus-visible{border-color:var(--acc);outline:none}
+.chip.on{background:var(--acc);color:var(--bg);border-color:var(--acc)}
+.note{font-size:13px;color:var(--mut);margin-top:20px}
+@media(prefers-reduced-motion:reduce){.z{transition:none}}
+</style>
+</head>
+<body>
+<main>
+<h1>Где что лежит</h1>
+<p class="sub">«Перекрёсток», Москва, ул. Миклухо-Маклая, 37, первый этаж</p>
+<input id="q" class="search" type="search" placeholder="Что ищете? Например: молоко, хлеб, пиво" autocomplete="off" aria-label="Поиск товара">
+<div id="res" class="res" aria-live="polite">Введите товар или нажмите на зону на схеме.</div>
+<div class="mapbox">
+<svg id="map" viewBox="0 0 680 515" role="img" aria-label="Схема торгового зала">
+<defs><pattern id="sh" width="8" height="6" patternUnits="userSpaceOnUse"><line x1="0" y1="3" x2="8" y2="3" stroke="#888780" stroke-opacity=".6" stroke-width=".8"/></pattern></defs>
+<path d="M620 460H660V20H20V460H560" fill="none" stroke="#888780" stroke-width="2"/>
+<text class="tx" x="170" y="281" text-anchor="middle" dominant-baseline="central">главный проход</text>
+<g id="zones"></g>
+<circle cx="590" cy="478" r="7" fill="#378ADD"/>
+<text class="nm" x="590" y="500" text-anchor="middle">Вход: вы здесь</text>
+</svg>
+</div>
+<div id="info" class="info" aria-live="polite"><b>Выберите зону</b><p>Нажмите на любой блок на схеме или на название ниже. Свободное место между блоками — проходы.</p></div>
+<h2>Все зоны</h2>
+<div id="list"></div>
+<p class="note">Схема приблизительная: она нарисована по плану эвакуации и может отличаться от реальной расстановки стеллажей.</p>
+</main>
+<script>
+const G={P:['Напитки и алкоголь','#7F77DD'],A:['Бакалея и сладости','#BA7517'],T:['Свежее и готовая еда','#1D9E75'],S:['Сервис и не еда','#888780']};
+const Z=[
+[1,'Снеки','A',[[40,34,230,24]],'чипсы сухарики орехи попкорн'],
+[2,'Алкоголь','P',[[40,70,26,200]],'пиво вино водка виски коньяк шампанское'],
+[3,'Напитки','P',[[84,70,30,95]],'вода сок газировка лимонад'],
+[4,'Чай, масло, дошираки','A',[[132,70,30,95]],'чай кофе масло подсолнечное лапша приправы'],
+[5,'Макароны','A',[[180,70,30,95]],'макароны спагетти паста'],
+[6,'Соусы','A',[[228,70,30,95]],'кетчуп майонез соус горчица'],
+[7,'Детские товары','A',[[276,70,30,95]],'детское питание пюре подгузники'],
+[8,'Напитки','P',[[84,185,30,85],[132,185,30,85]],'вода сок газировка энергетик'],
+[9,'Сладости','A',[[180,185,30,85],[228,185,30,85],[276,185,30,85]],'конфеты шоколад печенье вафли торты'],
+[10,'Средства для дома','S',[[40,292,44,50]],'бытовая химия порошок мыло'],
+[11,'Автоматы для оплаты','S',[[96,292,190,50]],'оплата касса самообслуживание'],
+[12,'Готовая еда','T',[[298,292,44,50]],'салаты обед кулинария'],
+[13,'Пицца / роллы','T',[[352,343,130,40]],'пицца суши роллы'],
+[14,'Столы для еды','S',[[140,410,280,30]],'перекусить поесть'],
+[15,'Крупы','A',[[324,70,30,95]],'гречка рис овсянка пшено'],
+[16,'Йогурты','T',[[370,70,30,95]],'йогурт творог десерт сырки'],
+[17,'Специи, мука, сахар','A',[[416,70,30,95]],'специи мука сахар соль'],
+[18,'Молоко','T',[[462,70,30,45]],'молоко кефир сметана сыр сливки'],
+[19,'Сухой завтрак','A',[[462,120,30,45]],'хлопья мюсли гранола'],
+[20,'Заморозка','T',[[510,70,40,95]],'пельмени мороженое замороженные овощи'],
+[21,'Мясо, птица, рыба','T',[[572,70,68,95]],'мясо курица говядина свинина рыба фарш'],
+[22,'Колбасы','T',[[420,34,220,24]],'колбаса сосиски ветчина сардельки'],
+[23,'«Полезное вкусно»','T',[[340,185,140,85]],'здоровое питание полезное'],
+[24,'Пекарня','T',[[352,292,130,43]],'хлеб булочки выпечка багет'],
+[25,'Фрукты','T',[[500,185,80,85]],'яблоки бананы апельсины'],
+[26,'Рыбная гастрономия','T',[[612,185,28,38]],'селедка красная рыба икра'],
+[27,'Варенье','A',[[612,227,28,38]],'варенье джем мед'],
+[28,'Напитки (у входа)','P',[[612,269,28,38]],'вода сок'],
+[29,'Овощи и фрукты','T',[[612,311,28,38]],'овощи картофель помидоры огурцы зелень фрукты']
+];
+const norm=s=>s.toLowerCase().replace(/ё/g,'е');
+let sel=null,hits=null;
+const zg=document.getElementById('zones');
+let h='';
+Z.forEach(([id,n,g,r])=>{
+  let x1=1e4,y1=1e4,x2=0,y2=0;
+  r.forEach(([x,y,w,t])=>{x1=Math.min(x1,x);y1=Math.min(y1,y);x2=Math.max(x2,x+w);y2=Math.max(y2,y+t)});
+  const cx=(x1+x2)/2,cy=(y1+y2)/2;
+  h+=`<g class="z" data-id="${id}" style="--c:${G[g][1]}" tabindex="0" role="button" aria-label="${id}. ${n}">`;
+  r.forEach(([x,y,w,t])=>{h+=`<rect class="c" x="${x}" y="${y}" width="${w}" height="${t}" rx="3"${id==14?' stroke-dasharray="4 3"':''}/><rect class="s" x="${x}" y="${y}" width="${w}" height="${t}"/>`});
+  h+=(x2-x1>=120)
+    ?`<text class="nm" x="${cx}" y="${cy}" text-anchor="middle" dominant-baseline="central">${n}</text>`
+    :`<circle class="bd" cx="${cx}" cy="${cy}" r="11"/><text class="bt" x="${cx}" y="${cy}" text-anchor="middle" dominant-baseline="central">${id}</text>`;
+  h+='</g>';
+});
+zg.innerHTML=h;
+const list=document.getElementById('list');
+let l='';
+Object.keys(G).forEach(k=>{
+  l+=`<div class="grp"><div class="gh" style="--c:${G[k][1]}"><i></i>${G[k][0]}</div><div class="chips">`;
+  Z.filter(z=>z[2]==k).forEach(z=>{l+=`<button class="chip" data-id="${z[0]}">${z[0]}. ${z[1]}</button>`});
+  l+='</div></div>';
+});
+list.innerHTML=l;
+function paint(){
+  document.querySelectorAll('.z').forEach(e=>{
+    const id=+e.dataset.id;
+    e.classList.toggle('sel',id===sel);
+    e.classList.toggle('hit',!!hits&&hits.includes(id));
+    e.classList.toggle('dim',!!hits&&!hits.includes(id)&&id!==sel);
+  });
+  document.querySelectorAll('.chip').forEach(e=>e.classList.toggle('on',+e.dataset.id===sel));
+}
+function pick(id){
+  sel=id;
+  const z=Z.find(a=>a[0]===id);
+  document.getElementById('info').innerHTML=`<b>${z[0]}. ${z[1]}</b><p>${G[z[2]][0]}</p><p>Здесь искать: ${z[4]}</p>`;
+  paint();
+}
+document.getElementById('q').addEventListener('input',e=>{
+  const q=norm(e.target.value.trim());
+  const res=document.getElementById('res');
+  if(!q){hits=null;res.textContent='Введите товар или нажмите на зону на схеме.';paint();return}
+  hits=Z.filter(z=>norm(z[1]+' '+z[4]).includes(q)).map(z=>z[0]);
+  if(hits.length){
+    res.textContent='Найдено: '+hits.map(i=>i+'. '+Z.find(z=>z[0]===i)[1]).join('; ');
+    pick(hits[0]);
+  }else{
+    res.textContent='Ничего не найдено. Попробуйте другое слово, например «хлеб» или «молоко».';
+    paint();
+  }
+});
+document.addEventListener('click',e=>{
+  const t=e.target.closest('[data-id]');
+  if(t)pick(+t.dataset.id);
+});
+document.addEventListener('keydown',e=>{
+  if((e.key==='Enter'||e.key===' ')&&e.target.classList.contains('z')){e.preventDefault();pick(+e.target.dataset.id)}
+});
+</script>
+</body>
+</html>
